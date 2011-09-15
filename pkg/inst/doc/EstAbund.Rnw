@@ -1,0 +1,335 @@
+%\VignetteIndexEntry{Estimating Abundances with sonicLength}
+\documentclass{article}
+\begin{document}
+\title{Estimating Abundance Using the SonicLength Package}
+\author{Charles C. Berry}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+  This document reviews some key functions in the \texttt{sonicLength}
+  package. Section \ref{sec:data-structure} shows how to set up data from an
+  experiment in which sonication is used to retrieve sites. Sections
+  \ref{sec:using-textttestabund} and \ref{sec:replicated-data} show how to call the
+  \texttt{estAbund} function. Section \ref{sec:jackkn-corr}
+  demonstrates how the \texttt{jackknife} option can be used to bias
+  correct estimates or estimate standard errors. Simulation is helpful
+  in assessing the properties of estimators and the \texttt{simSonic}
+  function provides a means for simulating data; it is described in
+  Section \ref{sec:simulating-data} 
+\end{abstract}
+
+\section{Data Structures}
+\label{sec:data-structure}
+
+The experimental setup for retrieving retroviral inseriton sites from
+data via sonication was laid out by Gillet et al \cite{pmid21228324}.
+
+
+The data from a collection of integration sites obtained by sonication
+can be represented by an R \texttt{data.frame} with columns for the
+\emph{Chromosome}, the \emph{Position} on the Chromosome, and the
+\emph{Strand} at which the integration site was found and a column for
+the \emph{Length} of the fragment recovered. The \texttt{data.frame}
+would have one row for each unique combination of the above variables
+observed.
+
+The following code block generates a \texttt{data.frame} that
+simulates such data, and displays the first and last 6 rows of it. The
+first 100 locations have one length each; the next 100 locations have
+2,\dots, 100 length sampled, but duplicates of some of these were
+removed. The function \texttt{rfrag} generates samples from a
+geometric distribution with probability $0.02$ that has been
+stochastically truncated according to a logistic law with location 45
+and scale 2.5 --- roughly corresponding to what is seen in actual
+data.
+ 
+@ 
+<<makeUpData>>=
+require(sonicLength)
+set.seed(123)
+chr <- sample(c(1:23,"X","Y"), 200, repl=TRUE )
+pos <- sample(100000L,200)
+strand <- sample(c("+","-"),200,repl=TRUE)
+lens <- lapply(1:200, rfrag )
+nlens <- sapply( lens, length )
+loc.dframe <- data.frame( Chromosome=chr, Position=pos, Ort=strand )
+len.dframe <- unique(cbind( loc.dframe[ rep( 1:200, nlens ) , ], length=unlist(lens) ))
+rbind( head( len.dframe ), tail( len.dframe ) )
+
+@ %def 
+
+The following code creates a unique identifier for each location and
+plots the actual number of lengths simulated versus the number of
+unique lengths for each location. The graph illustrates the essential
+difficulty with estimating the abundance of integration sites from the
+lengths of sonicated fragments: the more abundant sites tend to have
+multiple fragments of the same length. Since the fragments are
+subjected to PCR amplification, it is impossible to distinguish
+duplicates that result from amplification from those that result from
+unique sonicated fragments.
+
+@ 
+<<plotUnique,fig=T>>=
+
+id <- with( len.dframe , paste(Chromosome, Position, Ort ) )
+id.counts <- table(factor(id,unique(id))) 
+plot( as.vector(nlens), as.vector(id.counts),
+     xlab='number of sonicants',ylab='distinct lengths',
+     xlim=c(1,100), ylim=c(1,100))
+abline(a=0,b=1,col='gray')
+@ %def 
+
+\section{Using \texttt{estAbund}}
+\label{sec:using-textttestabund}
+
+
+The function \texttt{estAbund} uses a maximum likelihood approach to
+finding the number of sonicants that underlie the number of distinct
+lengths seen. The following code shows how to use it. The call to
+\texttt{str(fit)} shows the structure of the resulting object, which
+has the estimated values (as \texttt{theta}), the estimated
+probability of recovering a sonicant of a given length (as
+\texttt{phi}), the number of iterations of the algorithm before
+convergence is achieved (as \texttt{iter}), the observed number of
+distinct lengths for each integration site (as \texttt{obs}), the call
+that generated the object, and optionally the estimated variance of
+\texttt{theta} (as \texttt{var.theta}). The figure shows how the
+estimates compare to the actual values that generated the data.
+
+@ 
+<<strOptions,echo=F,results=hide>>=
+
+options( str = strOptions(strict.width="wrap") )
+
+@ %def 
+
+
+@ 
+<<loadSL, fig=T>>=
+
+fit <- estAbund(id, len.dframe$length)
+
+str( fit )
+
+plot(nlens, fit$theta[unique(id)],
+     xlab="actual sonicant count",
+     ylab="estimated sonicant count"
+     )
+abline(a=0,b=1,col='gray')
+
+@ %def 
+
+
+\section{Replicated Data}
+\label{sec:replicated-data}
+
+When there are replicates available, likelihood methods provide a
+means for combining the data from all of them by maximizing the
+likelihood using data from all the replicates simultaneously. Here
+more data is simulated for the same set of locations as were used
+above. An additional column called \texttt{repl} is added to keep
+track of the separate replicates. Also, the simulations use different
+sonication methods resulting in a different distribution of lengths
+for each of the three replicates. There are some differences in the
+object returned by \texttt{estAbund}; there is now a
+\texttt{data.frame} in the component called \texttt{lframe}, and it
+keeps track of the lengths (in column \texttt{x}) and replicates ( in
+column \texttt{strata}). Also, the \texttt{obs} component is now a
+matrix with one row for each integration site loction and one column
+for the count for each replicate.
+
+
+
+@ 
+<<repSim>>=
+
+len.dframe$repl <- 1
+lens2 <- lapply(1:200,rfrag, rate=0.03 )
+nlens2 <- sapply( lens2, length )
+len.dframe2 <- unique(cbind( loc.dframe[ rep( 1:200, nlens2 ) , ], length=unlist(lens2), repl=2 ))
+lens3 <- lapply(1:200,rfrag, rate=0.04 )
+nlens3 <- sapply( lens, length )
+len.dframe3 <- unique(cbind( loc.dframe[ rep( 1:200, nlens3 ) , ], length=unlist(lens3), repl=3 ))
+
+len.dframe <- rbind(len.dframe,len.dframe2,len.dframe3)
+
+fit2 <- with(len.dframe, estAbund( paste(Chromosome, Position, Ort ),
+                                   length, repl ))
+
+
+@ %def 
+
+
+Here is the structure of the resulting object.
+
+@ 
+<<strfit2>>=
+
+str( fit2 )
+
+@ %def 
+
+
+Here is a plot of the estimated values of \texttt{phi}.
+
+@ 
+<<phiPlot,fig=T>>=
+
+with( fit2, 
+     plot( lframe$x[ lframe$orig ], phi, pch=16,col=lframe$strata[ lframe$orig ],
+          xlab="length",
+          ylab='phi',
+          xlim=c(1,200)
+          ))
+legend("topright",col=1:3,pch=rep(16,3),legend=paste("replicate",1:3))
+
+
+@ %def 
+
+
+And here the estimated number of sonicants are plotted against the
+actual number (which now range up to 300, since there are three
+replicates). 
+
+@ 
+<<sonicPlot,fig=T>>=
+
+with( fit2,     
+     plot(3*nlens , theta[unique(id)],
+     xlab="actual sonicant count",
+     ylab="estimated sonicant count"
+     )
+     )
+
+abline(a=0,b=1,col='gray')
+
+
+@ %def 
+
+\section{Jackknife Corrections}
+\label{sec:jackkn-corr}
+
+When replicated data are available, one can use the jackknife method
+to correct the bias of any estimator or to estimate its standard
+error. See Miller \cite{miller1974jackknife} for a review.
+
+In this section we add the \texttt{jackknife=TRUE} argument and the
+\texttt{theta.var=TRUE} argument to the call for
+\texttt{estAbund}. The former argument is one of the named arguments
+for \texttt{estAbund}, but the latter is not. The latter argument is
+one of the named arguments to the fitting function \texttt{maxEM} and
+is passed to it with the effect that estimates of the variances of the
+abundance estimates and of the proportional abundance estimates are
+calculated. After the fitting is completed, some of the structure of
+the resulting object is revealing by listing the names of the
+components of the list returned.
+
+@ 
+<<jackSim>>=
+
+fit2 <- with(len.dframe, 
+             estAbund( paste(Chromosome, Position, Ort ),
+                      length, repl, jackknife=TRUE,
+                      theta.var=TRUE))
+
+head.names <- function(x) head( names(x) )
+
+sapply( fit2, head.names )
+
+@ %def 
+
+And here some of the structure of the jackknife component is
+shown. Basically, that component has the same length as the number of
+replicates\dots 
+
+@ 
+<<jackLen>>=
+
+length(fit2$jackknife)
+
+@ %def 
+
+\dots and each element has the same element names as the parent object
+(except for \texttt{jackknife}.
+
+
+@ 
+<<jackStr>>=
+
+str(fit2$jackknife[[1]])
+
+@ %def 
+
+
+And here is a demonstration of using the jackknife to correct bias in
+the estimate of the proportion represented by the most abundant site.
+
+@ 
+<<maxprop>>=
+nreps <- length( fit2$jackknife )
+argmax.theta <- which.max( fit2$theta )
+## function to extract the estimate
+maxpr <- function(x) prop.table( x$theta )[ argmax.theta ]
+## apply to full sample
+maxpr.total <- maxpr( fit2 )
+## make pseudo observations
+pseudo.maxpr <- nreps * maxpr.total - 
+  (nreps-1) * sapply( fit2$jackknife, maxpr )  
+
+## report results
+likeStdErr <- sqrt( fit2$var.theta$prop[ argmax.theta ] )
+jackStdErr = sd ( pseudo.maxpr ) / sqrt(nreps) 
+all.res <- c( uncorrected = unname(maxpr.total), 
+             corrected = mean(pseudo.maxpr),
+             likeStdErr = likeStdErr,
+             jackStdErr = jackStdErr)
+cbind(all.res)
+            
+
+@ %def 
+
+  
+The bias correction has scant effect here. As it turns out, the
+estimator is nearly unbiased, so this is expected. The jackknife
+standard error is within error distance of the standard error based on
+asymptotic theory  given that there are just \Sexpr{nreps} replicates.
+
+
+\section{Simulating Data}
+\label{sec:simulating-data}
+
+A convenience wrapper called \texttt{simSonic} is given for simulating data. 
+Here it is used to simulate more data according to the estimated values
+of \texttt{fit2[['theta']]} and \texttt{fit2[['phi']]}, and the
+resulting estimate of \texttt{theta} is plotted against its parent.
+
+@ 
+<<demoSimSonic,fig=T>>=
+
+more.data <- simSonic(fit2$theta,fit2$phi)
+
+fit3 <- do.call(estAbund, more.data )
+
+plot( fit2$theta[names(fit3$theta)], fit3$theta )
+abline(a=0,b=1)
+
+str(fit3)
+
+@ %def 
+
+\begin{thebibliography}{9}
+\bibitem{pmid21228324}
+  N.~A. Gillet, N.~Malani, A.~Melamed, N.~Gormley, R.~Carter, D.~Bentley,
+  C.~Berry, F.~D. Bushman, G.~P. Taylor, and C.~R. Bangham.
+  \newblock {{T}he host genomic environment of the provirus determines the
+    abundance of {H}{T}{L}{V}-1-infected {T}-cell clones}.
+  \newblock {\em Blood}, 117:3113--3122, Mar 2011.
+  
+\bibitem{miller1974jackknife}
+  R.~G.  Miller.
+  \newblock {{T}he jackknife-a review}.
+  \newblock {\em {B}iometrika}, 61(1):1--15, 1974.
+  
+\end{thebibliography}
+\end{document}

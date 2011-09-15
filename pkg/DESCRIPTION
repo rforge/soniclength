@@ -1,0 +1,13 @@
+Package: sonicLength
+Type: Package
+Title: Calibration of Number of Length Variants 
+Version: 1.4.0
+Date: 2011-09-15
+Author: Charles Berry <ccberry@users.r-forge.r-project.org>
+Maintainer: Charles Berry <ccberry@users.r-forge.r-project.org>
+Depends: R (>= 2.12.0), splines
+Description: Estimate the number of fragments produced by sonication
+	     of integration sites from tallies of the number of
+	     distinct lengths.
+License: GPL (>= 2)
+LazyLoad: yes
