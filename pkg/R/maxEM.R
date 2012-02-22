@@ -203,7 +203,7 @@ phi.deriv.default <- function(theta,phi, phi.update=phi.update.default, ... )
   fit <- phi.update( exp( -phi %o% theta ), return.fit=TRUE, ... )
   xphi <- (phi ) * model.matrix( fit, subset=fit$data$orig )
   res <- xphi - phi %o% colSums( xphi )
-  res[, sd(res) > .Machine$double.eps ]
+  res[, apply(res,2,sd) > .Machine$double.eps ]
 }
 
 EdL2.dlambda <- function(theta,phi)
