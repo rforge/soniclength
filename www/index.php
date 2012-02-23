@@ -47,5 +47,16 @@ echo $contents; } ?>
 
 <p> The <strong>project summary page</strong> you can find <a href="http://<?php echo $domain; ?>/projects/<?php echo $group_name; ?>/"><strong>here</strong></a>. </p>
 
+<p> The <strong>sonicLength</strong> package is used in this article
+  and implements the methods described there:
+<em>
+Estimating Abundances of Retroviral Insertion Sites from DNA Fragment Length Data
+</em>
+Charles C. Berry; Nicolas A. Gillet; Anat Melamed; Niall Gormley; Charles R.M Bangham; Frederic
+Bushman
+<strong>Bioinformatics</strong> 2012; doi: 10.1093/bioinformatics/bts004
+</p>
+
+
 </body>
 </html>
