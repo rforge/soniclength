@@ -61,7 +61,17 @@ Charles C Berry \email{ccberry@users.r-forge.r-project.org}
 \seealso{
   \code{\link{maxEM}}
   \code{\link{phi.update.lframe}}
-
+  The package vignette:Estimating Abundances with sonicLength
 }
+\references{
+
+     Estimating abundances of retroviral insertion sites 
+     from DNA fragment length data. Berry CC, Gillet NA, 
+     Melamed A, Gormley N, Bangham CR, Bushman FD.
+     Bioinformatics; 2012 Mar 15;28(6):755-62.  
+
+
+  
+  }
 \keyword{  models }
 

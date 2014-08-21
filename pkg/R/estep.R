@@ -7,7 +7,7 @@
     ##            theta - intensity parm
     ## ----------------------------------------------------------------------
     ## Author: Charles Berry, Date: 26 Mar 2011, 16:45
-    lambda <- matrix(phi,nc=1) %*% matrix(theta,nr=1)
+    lambda <- matrix(phi,ncol=1) %*% matrix(theta,nrow=1)
     expnl <- exp(-lambda)
     denom <- ( 1 - expnl ) #dpois(0, lambda ))
     res <- x * lambda / denom

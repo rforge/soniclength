@@ -1,0 +1,14 @@
+citHeader("To cite package `sonicLength' in publications use:")
+bibentry(
+bibtype="article",
+  title="Estimating abundances of retroviral insertion sites from DNA fragment length data",
+  author="Charles C Berry and Nicolas A Gillet and Anat Melamed and Niall Gormley and  Charles R M Bangham and Frederic D Bushman",
+  journal="Bioinformatics",
+  volume="28",
+  number="6",
+  pages="755--762",
+  year="2012",
+  publisher="Oxford Univ Press",
+  url="doi: 10.1093/bioinformatics/bts004"
+)
+
