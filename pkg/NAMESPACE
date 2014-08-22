@@ -2,3 +2,4 @@ export(maxEM, Ey.given.x, pr.y.given.x, maxEM.iter.control, mstep, phi.update.lf
 
 exportPattern( ".frag")
 
+import(splines)
