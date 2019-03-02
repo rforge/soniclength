@@ -3,3 +3,6 @@ export(maxEM, Ey.given.x, pr.y.given.x, maxEM.iter.control, mstep, phi.update.lf
 exportPattern( ".frag")
 
 import(splines)
+importFrom("stats", "convolve", "dgeom", "dpois", "glm",
+           "model.matrix", "plogis", "predict", "qgeom",
+           "quasipoisson", "rpois", "sd", "uniroot", "xtabs")
