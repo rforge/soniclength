@@ -1,4 +1,6 @@
-estAbund <- function(locations, lengths, replicates=NULL, jackknife=F, kmax=0, ...)
+estAbund <-
+    function(locations, lengths, replicates=NULL, jackknife=F,
+             kmax=0, min.length = 20, ...)
 {
   ## Purpose:estimate abundances from sonicated lengths
   ## ----------------------------------------------------------------------
@@ -8,11 +10,11 @@ estAbund <- function(locations, lengths, replicates=NULL, jackknife=F, kmax=0, .
   ##            jackknife - return leave one out results?
   ##            kmax - highest count to bother with (all higher values
   ##                        are globbed together in the result)
+  ##            min.length - min(lengths) < min.length is an error  
   ##            ... - other args to pass to maxEM or phi.update
   ## ----------------------------------------------------------------------
-  ## Author: Charles Berry, Date: 27 May 2011, 13:04
-
-  ## TODOs: minlen arg?
+  ## Author: Charles Berry, Date: 27 May 2011, 13:04    
+  
   
   mc <- match.call()
   noRep <- (is.null(replicates))
@@ -20,17 +22,21 @@ estAbund <- function(locations, lengths, replicates=NULL, jackknife=F, kmax=0, .
   stopifnot( noRep || length(unique(replicates))!=1 )
   stopifnot( if ( noRep )  !jackknife else TRUE )
   stopifnot( length(locations) == length(lengths) )
-
+  stopifnot( min(lengths) >= min.length )
+    
   dfr.call <- mc
   dfr.call[[1]] <- as.name("data.frame")
-  keep.args <- c(1,pmatch(c("locations","lengths", if (!missing(replicates)) "replicates"),names(dfr.call)))
+  keep.args <-
+    c(1,pmatch(c("locations","lengths",
+                 if (!missing(replicates)) "replicates"),names(dfr.call)))
   dfr.call[ -keep.args ] <- NULL
   dfr <- eval.parent(dfr.call)
   if (noRep) {
   ## simplest case is no replicates
 
     emcall <- mc
-    emcall$locations <- emcall$lengths <- emcall$replicates <- NULL
+    emcall$locations <- emcall$lengths <- emcall$replicates <-
+      emcall$min.length <- NULL
     emcall[[1]] <- as.name("maxEM")
     emcall$slmat <- quote(
                           xtabs( ~factor(lengths,min(lengths):max(lengths))
@@ -70,7 +76,8 @@ estAbund <- function(locations, lengths, replicates=NULL, jackknife=F, kmax=0, .
     ## now fit the whole thing:
 
     emcall <- mc
-    emcall$locations <- emcall$lengths <- emcall$replicates <- NULL
+    emcall$locations <- emcall$lengths <- emcall$replicates <-
+      emcall$min.length <- NULL
     emcall[[1]] <- as.name("maxEM")
     emcall$slmat <- as.name("slmat3")
     emcall$lframe <- as.name("tframe3")

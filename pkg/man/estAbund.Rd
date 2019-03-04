@@ -10,7 +10,8 @@
   likelihood approach is used  here. 
 }
 \usage{
-estAbund(locations, lengths, replicates = NULL, jackknife = F, kmax=0, \dots)
+estAbund(locations, lengths, replicates = NULL, jackknife = F, kmax=0,
+min.length = 20, \dots)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -29,6 +30,8 @@ estAbund(locations, lengths, replicates = NULL, jackknife = F, kmax=0, \dots)
   \item{kmax}{highest count to bother with when computing mass function
     for counts. All higher values are
     globbed together in the result. If \code{kmax==0} don't compute }
+  \item{min.length}{Least length expected for a fragment.  Shorter
+    lengths will not be permitted}
   \item{\dots}{
     Other arguments that may be passed along to functions that do the
     real work.
